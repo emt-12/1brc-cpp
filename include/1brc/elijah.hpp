@@ -52,23 +52,26 @@ inline short str_temp_to_int(std::string_view value) {
 }
 
 inline void chunk_data(std::unordered_map<std::string, StationData>& station_data) {
-    int BUFFER_SIZE = 1080;
+    short new_station = 0;
+
+    int BUFFER_SIZE = 1024;
     FILE *fp;
     char* buffer = new char[BUFFER_SIZE+1];
     size_t result;
     fp = fopen("measurements.txt", "rb");
-    char* remaining_buffer = new char[30];
+
+    char* remaining_buffer = new char[32];
     remaining_buffer[0] = '\0';
-    char* new_buffer = new char[1111];
-    char* station = new char[30];
-    char* temp = new char[30];
+    char* new_buffer = new char[1056];
+    char* station = new char[32];
+    char* temp = new char[32];
 
     char* previous = new_buffer;
     char* next = strchr(new_buffer, ';');
     char* last = strrchr(new_buffer, '\n');
 
     while((result = fread(buffer, 1, BUFFER_SIZE, fp)) > 0){
-        
+        buffer[result] = '\0';
         if(remaining_buffer[0] == '\0'){
             strcpy(new_buffer, strcat(remaining_buffer, buffer));
         }
@@ -76,26 +79,26 @@ inline void chunk_data(std::unordered_map<std::string, StationData>& station_dat
             strcpy(new_buffer, buffer);
         }
 
-        if(new_buffer[result-1] != '\n'){
-            new_buffer[result] = '\n';
-        }
-
         previous = new_buffer;
         next = strchr(new_buffer, ';');
         last = strrchr(new_buffer, '\n');
 
-        while(strchr(previous, '\n') != last && next != nullptr){
+        /*while(strchr(previous, '\n') != last && next != nullptr){
             station = strndup(previous, (next - previous));
+            station[next - previous] = '\0';
+            //std::cout << station << std::endl;
             
             previous = next + 1;
             next = strchr(previous, '\n');
             temp = strndup(previous, (next - previous));
+            temp[next - previous] = '\0';
 
-            short temperature = str_temp_to_int(temp);
-
-            if(station_data.find(station) == station_data.end()){
+            /*if(station_data.find(station) == station_data.end()){
+                new_station++;
                 station_data.insert({station, StationData()});
             }
+
+            short temperature = str_temp_to_int(temp);
 
             if(station_data[station].max_temp < temperature){
                 station_data[station].max_temp = temperature;
@@ -110,8 +113,11 @@ inline void chunk_data(std::unordered_map<std::string, StationData>& station_dat
             next = strchr(previous, ';');
 
         }
-        remaining_buffer = strndup(previous, (last - previous));
+        remaining_buffer = strndup(previous, (last - previous));*/
+
+
         // Process the buffer data here
+        //break;
     }
     free(buffer);
     free(remaining_buffer);
