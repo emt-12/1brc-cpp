@@ -54,37 +54,42 @@ inline short str_temp_to_int(std::string_view value) {
 inline void chunk_data(std::unordered_map<std::string, StationData>& station_data) {
     int BUFFER_SIZE = 1080;
     FILE *fp;
-    char buffer[BUFFER_SIZE + 1];
+    char* buffer = new char[BUFFER_SIZE+1];
     size_t result;
-    fp = fopen("measurements.txt", "r");
-    char* previous_buffer = nullptr;
-    char* new_buffer = nullptr;
-    char* station;
-    char* temp;
+    fp = fopen("measurements.txt", "rb");
+    char* remaining_buffer = new char[30];
+    remaining_buffer[0] = '\0';
+    char* new_buffer = new char[1111];
+    char* station = new char[30];
+    char* temp = new char[30];
+
+    char* previous = new_buffer;
+    char* next = strchr(new_buffer, ';');
+    char* last = strrchr(new_buffer, '\n');
 
     while((result = fread(buffer, 1, BUFFER_SIZE, fp)) > 0){
         
-        if(previous_buffer != nullptr){
-            new_buffer = strcat(previous_buffer, buffer);
+        if(remaining_buffer[0] == '\0'){
+            strcpy(new_buffer, strcat(remaining_buffer, buffer));
         }
         else{
-            new_buffer = buffer;
+            strcpy(new_buffer, buffer);
         }
 
-        new_buffer[result] = '\0';
-        char* previous = new_buffer;
-        char* next = strchr(new_buffer, ';');
+        if(new_buffer[result-1] != '\n'){
+            new_buffer[result] = '\n';
+        }
 
-        while(strchr(previous, '\n') != strrchr(new_buffer, '\n') && next != NULL){
+        previous = new_buffer;
+        next = strchr(new_buffer, ';');
+        last = strrchr(new_buffer, '\n');
 
-            station = strndup(previous, next - previous);
-            std::cout<< station << std::endl;
-
+        while(strchr(previous, '\n') != last && next != nullptr){
+            station = strndup(previous, (next - previous));
+            
             previous = next + 1;
-
             next = strchr(previous, '\n');
-            temp = strndup(previous, next - previous);
-            std::cout<< temp << std::endl;
+            temp = strndup(previous, (next - previous));
 
             short temperature = str_temp_to_int(temp);
 
@@ -105,12 +110,14 @@ inline void chunk_data(std::unordered_map<std::string, StationData>& station_dat
             next = strchr(previous, ';');
 
         }
-
-        previous_buffer = strndup(previous, next - previous);
-
-        break;
+        remaining_buffer = strndup(previous, (last - previous));
         // Process the buffer data here
     }
+    free(buffer);
+    free(remaining_buffer);
+    free(new_buffer);
+    free(station);
+    free(temp);
     fclose(fp);
 }
 
@@ -119,9 +126,8 @@ inline void solution(const std::string& filename) {
 
     std::unordered_map<std::string, StationData> station_data{};
     chunk_data(station_data);
-    return;
 
-    std::ifstream inputFile(filename);
+    /*std::ifstream inputFile(filename);
 
     if (!inputFile.is_open()) {
         std::cerr << "Error opening file \n";
@@ -158,7 +164,7 @@ inline void solution(const std::string& filename) {
     }
 
     inputFile.close();
-
+    */
     std::ofstream outputFile("output.txt");
 
     if (!outputFile.is_open()) {
