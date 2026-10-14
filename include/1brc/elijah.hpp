@@ -120,7 +120,6 @@ inline void solution(const std::string& filename) {
     std::unordered_map<std::string, StationData> station_data{};
     station_data.reserve(413);
     chunk_data(station_data, filename);
-
     std::ofstream outputFile("output.txt");
 
     if (!outputFile.is_open()) {
