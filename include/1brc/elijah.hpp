@@ -15,6 +15,8 @@
 #include <cstring>
 #include <algorithm>
 
+#include <unistd.h>
+
 struct StationData {
     short min_temp;
     short max_temp;
@@ -53,9 +55,7 @@ inline short str_temp_to_int(std::string_view value) {
 }
 
 inline void chunk_data(std::unordered_map<std::string, StationData>& station_data, const std::string& filename) {
-    short new_station = 0;
-
-    int BUFFER_SIZE = 1048576; // 1 MB
+    const size_t BUFFER_SIZE = ::sysconf(_SC_PAGE_SIZE);
     FILE *fp;
     char* buffer = new char[BUFFER_SIZE+1];
     char* overflow = new char[32];
@@ -64,7 +64,6 @@ inline void chunk_data(std::unordered_map<std::string, StationData>& station_dat
     char* next;
     char* end;
     size_t result;
-    int loop = 0;
     fp = fopen(filename.c_str(), "rb");
     if(fp == NULL) {
         std::cerr << "Error: Failed to open file \"" << filename << "\"!\n";
@@ -109,10 +108,6 @@ inline void chunk_data(std::unordered_map<std::string, StationData>& station_dat
         }
         overflow_size = &buffer[result] - (end + 1);
         memcpy(overflow, end+1, overflow_size);
-        
-        //loop++;
-        //std::cout << "next loop" << std::endl << std::endl;
-        //if(loop >= 2) break;
     }
     free(buffer);
     free(overflow);
@@ -126,43 +121,6 @@ inline void solution(const std::string& filename) {
     station_data.reserve(413);
     chunk_data(station_data, filename);
 
-    /*std::ifstream inputFile(filename);
-
-    if (!inputFile.is_open()) {
-        std::cerr << "Error opening file \n";
-        return;
-    }
-    
-    //std::unordered_map<std::string, std::vector<float>, std::less<std::string>> station_data{};
-
-    std::string line;
-    
-    while (std::getline(inputFile, line)) {
-        size_t delimiter_pos = line.find(';');
-
-        if (delimiter_pos == std::string::npos) {
-            break;
-        }
-
-        std::string station_name = line.substr(0, delimiter_pos);
-        short temperature = str_temp_to_int(line.substr(delimiter_pos + 1));
-
-        if(station_data.find(station_name) == station_data.end()){
-            station_data.insert({station_name, StationData()});
-        }
-
-        if(station_data[station_name].max_temp < temperature){
-            station_data[station_name].max_temp = temperature;
-        }
-        if(station_data[station_name].min_temp > temperature){
-            station_data[station_name].min_temp = temperature;
-        }
-        station_data[station_name].total_temp += temperature;
-        station_data[station_name].count++;
-    }
-
-    inputFile.close();
-    */
     std::ofstream outputFile("output.txt");
 
     if (!outputFile.is_open()) {
@@ -171,7 +129,7 @@ inline void solution(const std::string& filename) {
     }
     std::vector<std::pair<const std::string*, const StationData*>> sorted;
     sorted.reserve(413);
-    std::cout << station_data.size() << std::endl;
+    
     for (const auto& [name, data] : station_data) {
         sorted.emplace_back(&name, &data);
     }
